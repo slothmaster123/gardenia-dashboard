@@ -1,0 +1,47 @@
+[Unit]
+Description=Hermes Kanban Worker Poller Daemon
+Documentation=https://hermes-agent.nousresearch.com/docs
+After=network-online.target
+Wants=network-online.target gardenia-dashboard.service
+
+[Service]
+Type=simple
+User=hackbot
+WorkingDirectory=/home/hackbot/Projects/gardenia-dashboard
+
+# ── Environment ──────────────────────────────────────────────────────────
+Environment=HERMES_HOME=/home/hackbot/.hermes
+Environment=HERMES_BIN=/home/hackbot/.hermes/hermes-agent/venv/bin/hermes
+Environment=HERMES_POLL_INTERVAL=60
+Environment=HERMES_MAX_SPAWNS=3
+Environment=HERMES_DASHBOARD_URL=http://localhost:8091
+Environment=HERMES_WORKER_LOG=/home/hackbot/.hermes/logs/worker-daemon.log
+Environment=PATH=/home/hackbot/.hermes/hermes-agent/venv/bin:/usr/local/bin:/usr/bin:/bin
+
+ExecStart=/home/hackbot/.hermes/hermes-agent/venv/bin/python3 /home/hackbot/Projects/gardenia-dashboard/worker_daemon.py
+
+# ── Restart policy ───────────────────────────────────────────────────────
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+
+# Rate-limit restarts to prevent tight crash loops
+StartLimitInterval=300
+StartLimitBurst=5
+
+# ── Security hardening ───────────────────────────────────────────────────
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Allow writes to hermes logs, kanban workspaces, and /tmp
+ReadWritePaths=/home/hackbot/.hermes/logs
+ReadWritePaths=/home/hackbot/.hermes/kanban/workspaces
+ReadWritePaths=/tmp
+
+# ── Logging ──────────────────────────────────────────────────────────────
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hermes-worker-poller
+
+[Install]
+WantedBy=multi-user.target

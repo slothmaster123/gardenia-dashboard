@@ -1,0 +1,11 @@
+<div class="health-bar">
+  {% for name, info in services.items() %}
+  <div class="health-pill" title="{{ info.version or 'unknown version' }}">
+    <span class="dot {{ 'up' if info.reachable else 'down' }}"></span>
+    <span class="label-text">{{ name | capitalize }}</span>
+    {% if info.version %}
+    <span class="version">{{ info.version[:12] }}{% if info.version|length > 12 %}…{% endif %}</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

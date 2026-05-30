@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>Chat</h1>
+    <div class="sub">Message Hermes profiles. Streaming later.</div>
+  </div>
+</header>
+
+<div class="chat-layout">
+  <aside class="chat-sidebar">
+    <div class="sidebar-header">Profiles</div>
+    <ul id="profile-list" class="profile-list">
+      <li class="profile-item muted">Loading…</li>
+    </ul>
+  </aside>
+
+  <main class="chat-main">
+    <div id="message-list" class="message-list">
+      <div class="empty-chat">
+        <div class="icon">☾</div>
+        <div class="muted">Select a profile and start chatting.</div>
+      </div>
+    </div>
+
+    <form id="chat-form" class="chat-input-bar" autocomplete="off">
+      <input
+        id="chat-input"
+        type="text"
+        placeholder="Type a message…"
+        disabled
+        autofocus
+      />
+      <button id="chat-send" type="submit" disabled>Send</button>
+    </form>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
+{% endblock %}

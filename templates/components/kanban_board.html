@@ -1,0 +1,51 @@
+<div class="kanban-toolbar">
+  <span class="kanban-total">{{ total }} task{{ '' if total == 1 else 's' }}</span>
+  <span class="kanban-updated" title="{{ updated_at }}">Updated <time></time></span>
+</div>
+
+<div class="kanban-columns">
+  {% for col in columns %}
+    {% if col != 'archived' %}
+    <div class="kanban-column" data-status="{{ col }}">
+      <div class="kanban-column-header">
+        <span class="kanban-col-label">
+          <span class="kanban-col-dot" style="background:{{ colors[col] }}"></span>
+          {{ labels[col] }}
+        </span>
+        <span class="kanban-col-count">{{ counts.get(col, 0) }}</span>
+      </div>
+      <div class="kanban-col-body">
+        {% for task in groups.get(col, []) %}
+        <div class="kanban-card"
+             hx-get="/api/kanban/task/{{ task.id }}/card"
+             hx-target="#kanban-detail-panel"
+             hx-swap="innerHTML"
+             _="on click
+                  show #kanban-detail-overlay
+                  wait 50ms
+                  add .open to #kanban-detail-overlay">
+          <div class="kanban-card-title">{{ task.title }}</div>
+          <div class="kanban-card-meta">
+            {% if task.assignee %}
+            <span class="kanban-card-badge assignee">{{ task.assignee }}</span>
+            {% endif %}
+            {% if task.priority and task.priority != 0 %}
+            <span class="kanban-card-badge priority">P{{ task.priority }}</span>
+            {% endif %}
+            {% for p in task.parents %}
+            <span class="kanban-card-badge parent" title="{{ p.title }}">← {{ p.assignee or p.id[:8] }}</span>
+            {% endfor %}
+            {% if task.current_run %}
+            <span class="kanban-card-badge run live" title="Running since {{ task.current_run.started_at }}">● live</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        {% if not groups.get(col, []) %}
+        <div class="kanban-card kanban-card-empty">—</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>

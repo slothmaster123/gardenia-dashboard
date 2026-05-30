@@ -1,0 +1,30 @@
+[Unit]
+Description=Gardenia Unified Dashboard (Flask)
+Documentation=https://github.com/nous-research/hermes-agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hackbot
+WorkingDirectory=/home/hackbot/Projects/gardenia-dashboard
+EnvironmentFile=/home/hackbot/Projects/gardenia-dashboard/.env
+Environment=GARDENIA_DASHBOARD_PORT=8091
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/hackbot/Projects/gardenia-dashboard/venv/bin/python3 /home/hackbot/Projects/gardenia-dashboard/app.py
+Restart=on-failure
+RestartSec=3
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ReadWritePaths=/home/hackbot/Projects/gardenia-dashboard
+ReadWritePaths=/tmp/yts/data
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gardenia-dashboard
+
+[Install]
+WantedBy=multi-user.target

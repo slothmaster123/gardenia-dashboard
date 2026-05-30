@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <header class="page-header">
+    <div>
+      <h1>Unified Control Dashboard</h1>
+      <div class="sub">Local-first. Fast. No noise.</div>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="stat">
+      <div class="label">Status</div>
+      <div class="value">Online</div>
+      <div class="hint">:8091</div>
+    </div>
+    <div class="stat" hx-get="/api/dashboard/stat/youtube" hx-trigger="load" hx-swap="outerHTML">
+      <div class="label">YouTube</div>
+      <div class="value">&hellip;</div>
+      <div class="hint">Loading</div>
+    </div>
+    <div class="stat" hx-get="/api/dashboard/stat/media" hx-trigger="load" hx-swap="outerHTML">
+      <div class="label">Media</div>
+      <div class="value">&hellip;</div>
+      <div class="hint">Loading</div>
+    </div>
+    <div class="stat" hx-get="/api/dashboard/stat/tasks" hx-trigger="load" hx-swap="outerHTML">
+      <div class="label">Tasks</div>
+      <div class="value">&hellip;</div>
+      <div class="hint">Loading</div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <a class="card" href="{{ url_for('youtube.youtube_page') }}">
+      <div class="card-title">YouTube</div>
+      <div class="card-body">Channel intelligence, summaries, search, trends.</div>
+    </a>
+    <a class="card" href="{{ url_for('arrs.media_page') }}">
+      <div class="card-title">Media</div>
+      <div class="card-body">Sonarr / Radarr / Lidarr: wanted, queue, health.</div>
+    </a>
+    <a class="card" href="{{ url_for('chat.chat_page') }}">
+      <div class="card-title">Chat</div>
+      <div class="card-body">Message Hermes profiles. Streaming later.</div>
+    </a>
+    <a class="card" href="{{ url_for('tasks_index') }}">
+      <div class="card-title">Tasks</div>
+      <div class="card-body">Kanban board: todo / ready / running / done.</div>
+    </a>
+  </section>
+{% endblock %}

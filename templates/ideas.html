@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ideas-page">
+<header class="page-header">
+  <div>
+    <h1>💡 Ideas Bank</h1>
+    <div class="sub">Extracted insights, techniques, and video ideas from analyzed content. Fuel for your channel.</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="refreshIdeas()" title="Reload from disk">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- Stats bar (loaded via HTMX) -->
+<section id="ideas-stats" class="stats"
+         hx-get="/api/ideas/stats"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+  <div class="stat"><div class="label">Total Ideas</div><div class="value">—</div><div class="hint">Loading…</div></div>
+  <div class="stat"><div class="label">Saved</div><div class="value">—</div><div class="hint">Your collection</div></div>
+  <div class="stat"><div class="label">Videos</div><div class="value">—</div><div class="hint">Analyzed sources</div></div>
+  <div class="stat"><div class="label">Channels</div><div class="value">—</div><div class="hint">Active sources</div></div>
+</section>
+
+<!-- Tabs: All Ideas / Saved -->
+<div class="ideas-tabs">
+  <button class="tab-btn active" onclick="switchIdeasTab('all', this)">All Ideas</button>
+  <button class="tab-btn" onclick="switchIdeasTab('saved', this)">📌 Saved</button>
+</div>
+
+<!-- Search + Filter bar -->
+<div class="ideas-search-bar">
+  <input
+    id="ideas-search"
+    type="search"
+    placeholder="Search ideas, titles, channels…"
+    autocomplete="off"
+    hx-get="/api/ideas"
+    hx-trigger="keyup changed delay:300ms"
+    hx-target="#ideas-grid"
+    hx-swap="outerHTML"
+    hx-include="#ideas-section-filter"
+  >
+  <select id="ideas-section-filter"
+          hx-get="/api/ideas"
+          hx-trigger="change"
+          hx-target="#ideas-grid"
+          hx-swap="outerHTML"
+          hx-include="#ideas-search">
+    <option value="">All Sections</option>
+    <option value="takeaway">Key Takeaways</option>
+    <option value="video-idea">Video Ideas</option>
+    <option value="technique">What to Steal</option>
+    <option value="wisdom">Wisdom</option>
+    <option value="gap">Content Gaps</option>
+  </select>
+</div>
+
+<!-- All Ideas grid (loaded via HTMX) -->
+<section id="ideas-grid"
+         hx-get="/api/ideas"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+  <div class="empty"><div class="icon">💭</div><div>Loading ideas…</div></div>
+</section>
+
+<!-- Saved Ideas grid (hidden by default) -->
+<section id="saved-grid" style="display:none;"
+         hx-get="/api/ideas/saved"
+         hx-trigger="revealed"
+         hx-swap="outerHTML">
+</section>
+
+<script>
+  /* ── Tab switching ── */
+  function switchIdeasTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const allGrid = document.getElementById('ideas-grid');
+    const savedGrid = document.getElementById('saved-grid');
+    const searchBar = document.querySelector('.ideas-search-bar');
+
+    if (tab === 'saved') {
+      allGrid.style.display = 'none';
+      savedGrid.style.display = 'block';
+      searchBar.style.display = 'none';
+      // Trigger HTMX load for saved
+      savedGrid.setAttribute('hx-trigger', 'load');
+      htmx.process(savedGrid);
+      htmx.trigger(savedGrid, 'load');
+    } else {
+      allGrid.style.display = 'block';
+      savedGrid.style.display = 'none';
+      searchBar.style.display = 'flex';
+    }
+  }
+
+  /* ── Save / Unsave toggle ── */
+  function toggleSaveIdea(ideaId, btn) {
+    const isSaved = btn.classList.contains('saved');
+    if (isSaved) {
+      // Unsave
+      fetch('/api/ideas/saved/' + ideaId, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            btn.classList.remove('saved');
+            btn.textContent = '☆';
+          }
+        });
+    } else {
+      // Save
+      fetch('/api/ideas/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: ideaId }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            btn.classList.add('saved');
+            btn.textContent = '★';
+          }
+        });
+    }
+  }
+
+  /* ── Remove from saved ── */
+  function removeSavedIdea(ideaId, btn) {
+    fetch('/api/ideas/saved/' + ideaId, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          const card = document.getElementById('saved-' + ideaId);
+          if (card) {
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+            setTimeout(() => card.remove(), 300);
+          }
+          // Refresh the saved grid if empty
+          const grid = document.getElementById('saved-grid');
+          if (grid && grid.querySelectorAll('.idea-card').length <= 1) {
+            htmx.trigger(grid, 'load');
+          }
+        }
+      });
+  }
+
+  /* ── Refresh ── */
+  function refreshIdeas() {
+    // Bust cache by refreshing all HTMX targets
+    htmx.trigger('#ideas-stats', 'load');
+    htmx.trigger('#ideas-grid', 'load');
+    const savedGrid = document.getElementById('saved-grid');
+    if (savedGrid && savedGrid.style.display !== 'none') {
+      htmx.trigger(savedGrid, 'load');
+    }
+  }
+</script>
+</div>
+{% endblock %}

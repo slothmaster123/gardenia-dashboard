@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>Media</h1>
+    <div class="sub">Sonarr • Radarr • Lidarr</div>
+  </div>
+  <div id="health-bar" hx-get="/api/media/health/bar" hx-trigger="load, every 30s" hx-swap="innerHTML">
+    <div class="health-bar"><span class="muted" style="font-size:12px">Checking services…</span></div>
+  </div>
+</header>
+
+<!-- Disk space -->
+<div id="disk-bar" hx-get="/api/media/disk/bar" hx-trigger="load, every 60s" hx-swap="innerHTML">
+  <div class="disk-bar"><span class="muted" style="font-size:12px">Loading disk info…</span></div>
+</div>
+
+<!-- Tabs -->
+<nav class="media-tabs" role="tablist">
+  <button class="media-tab active" hx-get="/api/media/sonarr/panel" hx-target="#media-panel" hx-swap="innerHTML" hx-trigger="click" onclick="setActiveTab(this)" aria-selected="true" role="tab">
+    <span class="tab-icon">📺</span> TV Shows
+  </button>
+  <button class="media-tab" hx-get="/api/media/radarr/panel" hx-target="#media-panel" hx-swap="innerHTML" hx-trigger="click" onclick="setActiveTab(this)" aria-selected="false" role="tab">
+    <span class="tab-icon">🎬</span> Movies
+  </button>
+  <button class="media-tab" hx-get="/api/media/lidarr/panel" hx-target="#media-panel" hx-swap="innerHTML" hx-trigger="click" onclick="setActiveTab(this)" aria-selected="false" role="tab">
+    <span class="tab-icon">🎵</span> Music
+  </button>
+</nav>
+
+<!-- Content panel -->
+<div id="media-panel" hx-get="/api/media/sonarr/panel" hx-trigger="load" hx-swap="innerHTML">
+  <div class="empty"><div class="icon">⏳</div><div class="muted">Loading…</div></div>
+</div>
+
+<script>
+  /** Switch active tab styling */
+  function setActiveTab(el) {
+    document.querySelectorAll('.media-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    el.classList.add('active');
+    el.setAttribute('aria-selected', 'true');
+  }
+</script>
+
+<style>
+  /* ── Health bar ─────────────────────────────────────── */
+  .health-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .health-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .health-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .health-pill .dot.up    { background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.5); }
+  .health-pill .dot.down  { background: var(--red);  box-shadow: 0 0 8px rgba(248,113,113,0.5); }
+  .health-pill .label-text { color: var(--text-secondary); }
+  .health-pill .version   { color: var(--muted); font-weight: 400; font-size: 11px; }
+
+  /* ── Disk bar ───────────────────────────────────────── */
+  .disk-bar {
+    margin: 18px 0 10px;
+    padding: 12px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .disk-bar .disk-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .disk-bar .disk-track {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .disk-bar .disk-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 100%);
+    transition: width 0.5s ease;
+  }
+  .disk-bar .disk-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Media tabs ─────────────────────────────────────── */
+  .media-tabs {
+    display: flex;
+    gap: 0;
+    margin: 0 0 0 0;
+    border-bottom: 2px solid var(--border);
+    background: none;
+    padding: 0;
+    height: auto;
+    position: static;
+    backdrop-filter: none;
+  }
+  .media-tab {
+    padding: 10px 22px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: var(--font);
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .media-tab:hover { color: #fff; }
+  .media-tab.active {
+    color: #fff;
+    border-bottom-color: var(--accent);
+  }
+  .tab-icon { font-size: 14px; margin-right: 4px; }
+
+  /* ── Media table ────────────────────────────────────── */
+  .media-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 13.5px;
+  }
+  .media-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .media-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(37,37,53,0.4);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .media-table tr:hover td { background: rgba(255,255,255,0.015); }
+  .media-table .item-date { color: var(--text-secondary); font-size: 12.5px; white-space: nowrap; }
+  .media-table .item-meta  { color: var(--muted); font-size: 12px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.downloaded   { background: rgba(52,211,153,0.12); color: var(--green); }
+  .badge.missing      { background: rgba(248,113,113,0.12); color: var(--red); }
+  .badge.downloading  { background: rgba(245,158,11,0.12); color: var(--gold); }
+  .badge.unmonitored  { background: rgba(160,160,184,0.08); color: var(--muted); }
+
+  /* ── Section header ─────────────────────────────────── */
+  .section-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin: 20px 0 6px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .section-count {
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+
+  /* ── Queue progress ─────────────────────────────────── */
+  .progress-track {
+    width: 100px;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .progress-pct {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Empty state override ───────────────────────────── */
+  .media-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    border: 1px dashed rgba(42,42,61,0.5);
+    border-radius: var(--radius-lg);
+    margin-top: 16px;
+  }
+</style>
+{% endblock %}

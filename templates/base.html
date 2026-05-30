@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ title or "Gardenia Dashboard" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🌿</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <nav>
+      <a href="{{ url_for('dashboard_index') }}" class="brand">Gardenia</a>
+      <a href="{{ url_for('dashboard_index') }}" class="{% if active=='dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{{ url_for('youtube.youtube_page') }}" class="{% if active=='youtube' %}active{% endif %}">YouTube</a>
+      <a href="{{ url_for('ideas.ideas_page') }}" class="{% if active=='ideas' %}active{% endif %}">Ideas</a>
+      <a href="{{ url_for('arrs.media_page') }}" class="{% if active=='media' %}active{% endif %}">Media</a>
+      <a href="{{ url_for('chat.chat_page') }}" class="{% if active=='chat' %}active{% endif %}">Chat</a>
+      <a href="{{ url_for('tasks_index') }}" class="{% if active=='tasks' %}active{% endif %}">Tasks</a>
+    </nav>
+
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+{% if error %}
+<div class="kanban-detail-error">
+  <h3>Task Not Found</h3>
+  <p>{{ error }}</p>
+  <button class="btn btn-ghost"
+          _="on click remove .open from #kanban-detail-overlay then hide #kanban-detail-overlay">
+    Close
+  </button>
+</div>
+{% else %}
+<div class="kanban-detail">
+  <div class="kanban-detail-header">
+    <div>
+      <h3>{{ task.title }}</h3>
+      <div class="kanban-detail-id">{{ task.id }}</div>
+    </div>
+    <button class="btn btn-ghost kanban-detail-close"
+            _="on click remove .open from #kanban-detail-overlay then hide #kanban-detail-overlay">
+      &times;
+    </button>
+  </div>
+
+  <div class="kanban-detail-meta">
+    <div class="kanban-detail-row">
+      <span class="kanban-detail-label">Status</span>
+      <span class="kanban-detail-value status-badge status-{{ task.status }}">{{ task.status }}</span>
+    </div>
+    {% if task.assignee %}
+    <div class="kanban-detail-row">
+      <span class="kanban-detail-label">Assignee</span>
+      <span class="kanban-detail-value">{{ task.assignee }}</span>
+    </div>
+    {% endif %}
+    {% if task.priority %}
+    <div class="kanban-detail-row">
+      <span class="kanban-detail-label">Priority</span>
+      <span class="kanban-detail-value">P{{ task.priority }}</span>
+    </div>
+    {% endif %}
+    <div class="kanban-detail-row">
+      <span class="kanban-detail-label">Created</span>
+      <span class="kanban-detail-value">{{ task.created_at }}</span>
+    </div>
+  </div>
+
+  {% if task.body %}
+  <div class="kanban-detail-section">
+    <h4>Description</h4>
+    <div class="kanban-detail-body">{{ task.body | replace('\n', '<br>') | safe }}</div>
+  </div>
+  {% endif %}
+
+  {% if task.parents %}
+  <div class="kanban-detail-section">
+    <h4>Parents</h4>
+    <div class="kanban-detail-list">
+      {% for p in task.parents %}
+      <span class="kanban-card-badge parent" title="{{ p.title }}">{{ '#' + p.id[:8] }} — {{ p.title }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if task.children %}
+  <div class="kanban-detail-section">
+    <h4>Children</h4>
+    <div class="kanban-detail-list">
+      {% for c in task.children %}
+      <span class="kanban-card-badge child" title="{{ c.title }}">{{ '#' + c.id[:8] }} — {{ c.title }} ({{ c.status }})</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if task.comments %}
+  <div class="kanban-detail-section">
+    <h4>Comments ({{ task.comments | length }})</h4>
+    {% for c in task.comments %}
+    <div class="kanban-detail-comment">
+      <div class="kanban-comment-meta">
+        <span class="kanban-comment-author">{{ c.author }}</span>
+        <span class="kanban-comment-time">{{ c.created_at }}</span>
+      </div>
+      <div class="kanban-comment-body">{{ c.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if task.runs %}
+  <div class="kanban-detail-section">
+    <h4>Recent Runs</h4>
+    {% for r in task.runs %}
+    <div class="kanban-detail-run">
+      <span class="kanban-run-profile">{{ r.profile }}</span>
+      <span class="kanban-run-status">{{ r.status }}</span>
+      {% if r.outcome %}<span class="kanban-run-outcome">{{ r.outcome }}</span>{% endif %}
+      {% if r.summary %}<span class="kanban-run-summary">{{ r.summary }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,21 @@
+{% set used = data.used_space %}
+{% set total = data.total_space %}
+{% set pct = (used / total * 100) if total > 0 else 0 %}
+{% set free_gb = (data.free_space / (1024**3)) | round(1) %}
+{% set total_gb = (total / (1024**3)) | round(1) %}
+<div class="disk-bar">
+  <div class="disk-label">Disk Usage — {{ free_gb }} GB free of {{ total_gb }} GB</div>
+  <div class="disk-track">
+    <div class="disk-fill" style="width: {{ pct | round(1) }}%"></div>
+  </div>
+  <div class="disk-stats">
+    <span>{{ (used / (1024**3)) | round(1) }} GB used</span>
+    <span>{{ pct | round(1) }}%</span>
+    <span>{{ free_gb }} GB free</span>
+  </div>
+  <div class="disk-stats" style="margin-top: 4px; font-size: 11px; color: var(--muted);">
+    {% for svc, info in data.services.items() %}
+    <span>{{ svc | capitalize }}: {{ (info.free / (1024**3)) | round(1) }} GB free</span>
+    {% endfor %}
+  </div>
+</div>

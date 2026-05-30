@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <header class="page-header">
+    <div>
+      <h1>{{ heading }}</h1>
+      <div class="sub">{{ note }}</div>
+    </div>
+    <div class="header-actions">
+      <span class="spinner htmx-indicator" id="kanban-spinner"></span>
+      <span class="btn btn-ghost" id="kanban-updated" style="font-size:11px;color:var(--muted)"></span>
+    </div>
+  </header>
+
+  {# ── Worker Daemon Status Bar ─────────────────────────────────────── #}
+  <div id="worker-daemon-bar"
+       hx-get="/api/worker/status"
+       hx-trigger="load, every 30s"
+       hx-swap="innerHTML">
+    <div class="daemon-bar daemon-loading">
+      <span class="daemon-dot"></span> Loading daemon status…
+    </div>
+  </div>
+
+  {# ── Kanban Board ─────────────────────────────────────────────────── #}
+  <div id="kanban-board"
+       hx-get="/api/kanban/board"
+       hx-trigger="load, every 10s"
+       hx-swap="innerHTML"
+       hx-indicator="#kanban-spinner">
+    <div class="kanban-loading">
+      {% for s in status_columns if s != 'archived' %}
+      <div class="kanban-column">
+        <div class="kanban-column-header">
+          <span class="kanban-col-label">{{ status_labels[s] }}</span>
+          <span class="kanban-col-count">—</span>
+        </div>
+        <div class="kanban-col-body">
+          <div class="kanban-card kanban-card-skel"></div>
+          <div class="kanban-card kanban-card-skel"></div>
+          <div class="kanban-card kanban-card-skel"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Task Detail Modal ────────────────────────────────────────────── #}
+  <div id="kanban-detail-overlay" class="kanban-overlay" style="display:none"
+       _="on click if event.target is me remove .open from me then hide me">
+    <div class="kanban-detail-panel" id="kanban-detail-panel"
+         _="on click halt"></div>
+  </div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{# Partial: media panel content for a single *arr service.
+   Expects: service ('sonarr'|'radarr'|'lidarr'), calendar (list), wanted (list), queue (list) #}
+
+<div class="media-content" hx-get="/api/media/{{ service }}/panel" hx-trigger="every 60s" hx-swap="innerHTML">
+  {# ── Calendar section ── #}
+  {% if calendar is defined and calendar %}
+  <div class="section-header">
+    {% if service == 'sonarr' %}📅 Upcoming Episodes{% elif service == 'radarr' %}📅 Upcoming Movies{% else %}📅 Upcoming Releases{% endif %}
+    <span class="section-count">{{ calendar|length }}</span>
+  </div>
+  <table class="media-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in calendar %}
+      <tr>
+        <td>{{ item.label }}</td>
+        <td class="item-date">{{ item.date }}</td>
+        <td>
+          {% if item.status == 'downloaded' %}
+          <span class="badge downloaded">✓ Downloaded</span>
+          {% elif item.status == 'missing' %}
+          <span class="badge missing">Missing</span>
+          {% elif item.status == 'unmonitored' %}
+          <span class="badge unmonitored">Unmonitored</span>
+          {% else %}
+          <span class="badge downloading">{{ item.status }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {# ── Wanted / Missing section ── #}
+  {% if wanted is defined and wanted %}
+  <div class="section-header">
+    🔍 Wanted
+    <span class="section-count">{{ wanted|length }}</span>
+  </div>
+  <table class="media-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in wanted %}
+      <tr>
+        <td>{{ item.label }}</td>
+        <td class="item-date">{{ item.date }}</td>
+        <td>
+          <span class="badge missing">Missing</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {# ── Queue section (Sonarr only) ── #}
+  {% if queue is defined and queue %}
+  <div class="section-header">
+    ⬇️ Active Downloads
+    <span class="section-count">{{ queue|length }}</span>
+  </div>
+  <table class="media-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Progress</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in queue %}
+      <tr>
+        <td>{{ item.label }}</td>
+        <td class="item-meta">
+          <div class="progress-track"><div class="progress-fill" style="width:{{ item.progress }}%"></div></div>
+          <span class="progress-pct">{{ item.progress }}%</span>
+        </td>
+        <td>
+          <span class="badge downloading">{{ item.status }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {# ── Empty state ── #}
+  {% if (not calendar or calendar|length == 0) and (not wanted or wanted|length == 0) and (not queue or queue|length == 0) %}
+  <div class="media-empty">
+    <div class="icon" style="font-size:32px;opacity:0.5">✨</div>
+    <div>All caught up — nothing to show.</div>
+  </div>
+  {% endif %}
+</div>

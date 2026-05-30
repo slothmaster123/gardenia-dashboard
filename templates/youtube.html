@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>YouTube Analysis</h1>
+    <div class="sub">Channel intelligence, summaries, and search across analyzed videos.</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="refreshYouTube()" title="Refresh data from disk">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- Stats bar (loaded via HTMX) -->
+<section id="yt-stats" class="stats"
+         hx-get="/api/youtube/channels"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+  <div class="stat"><div class="label">Videos</div><div class="value">—</div><div class="hint">Loading…</div></div>
+  <div class="stat"><div class="label">Channels</div><div class="value">—</div><div class="hint">Loading…</div></div>
+  <div class="stat"><div class="label">Most Active</div><div class="value">—</div><div class="hint">Loading…</div></div>
+</section>
+
+<!-- Search bar -->
+<div class="yt-search-bar">
+  <input
+    id="yt-search"
+    type="search"
+    placeholder="Search summaries, takeaways, metadata…"
+    autocomplete="off"
+    name="q"
+    hx-get="/api/youtube/search"
+    hx-trigger="keyup changed delay:400ms"
+    hx-target="#yt-search-results"
+  />
+  <span class="htmx-indicator spinner" id="yt-search-spinner"></span>
+</div>
+<div id="yt-search-results" class="yt-search-results"></div>
+
+<!-- Channel filter chips (loaded via HTMX) -->
+<div id="yt-channel-filter" class="yt-channel-bar"
+     hx-get="/api/youtube/channel-filter"
+     hx-trigger="load"
+     hx-swap="outerHTML">
+  <span class="filter-label">Filter by channel:</span>
+  <span class="muted">Loading…</span>
+</div>
+
+<!-- Video cards (loaded via HTMX) -->
+<section id="yt-videos"
+         hx-get="/api/youtube/videos?limit=50"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+  <div class="empty">
+    <div class="icon">▶</div>
+    <div>Loading video library…</div>
+  </div>
+</section>
+
+<!-- Detail overlay (hidden by default, revealed via JS fetch) -->
+<div id="yt-detail-overlay" class="yt-detail-overlay" style="display:none" onclick="closeDetail(event)">
+  <div id="yt-detail-panel" class="yt-detail-panel" onclick="event.stopPropagation()">
+    <div id="yt-detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ── Video detail modal ──────────────────────────────────────────────────
+function loadVideoDetail(videoId) {
+  const overlay = document.getElementById('yt-detail-overlay');
+  const content = document.getElementById('yt-detail-content');
+  overlay.style.display = 'flex';
+  content.innerHTML = '<div class="empty"><div class="icon">⏳</div><div>Loading analysis…</div></div>';
+
+  fetch('/api/youtube/video/' + videoId)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) {
+        content.innerHTML = '<div class="empty">Error: ' + escapeHtml(data.error) + '</div>';
+        return;
+      }
+      const v = data.video;
+      let html = '<div class="detail-header">';
+      html += '<button class="btn btn-ghost detail-close" onclick="closeDetail()">✕</button>';
+      html += '<h2>' + escapeHtml(v.title) + '</h2>';
+      html += '<div class="detail-meta">';
+      html += '<span class="detail-channel">' + escapeHtml(v.channel) + '</span>';
+      if (v.category) html += '<span class="detail-category">' + escapeHtml(v.category) + '</span>';
+      if (v.date) html += '<span class="detail-date">' + escapeHtml(v.date) + '</span>';
+      html += '</div></div>';
+      if (v.summary) {
+        html += '<div class="detail-section"><div class="detail-label">Summary</div>';
+        html += '<p>' + escapeHtml(v.summary) + '</p></div>';
+      }
+      if (v.takeaways && v.takeaways.length) {
+        html += '<div class="detail-section"><div class="detail-label">Key Takeaways</div><ul>';
+        v.takeaways.forEach(t => { html += '<li>' + escapeHtml(t) + '</li>'; });
+        html += '</ul></div>';
+      }
+      html += '<div class="detail-footer">';
+      html += '<a class="btn btn-ghost" href="https://youtube.com/watch?v=' + videoId + '" target="_blank" rel="noopener">▶ Watch on YouTube</a>';
+      html += '</div>';
+      content.innerHTML = html;
+    })
+    .catch(err => {
+      content.innerHTML = '<div class="empty">Failed to load: ' + escapeHtml(err.message) + '</div>';
+    });
+}
+
+function closeDetail(event) {
+  if (event && event.target !== document.getElementById('yt-detail-overlay')) return;
+  document.getElementById('yt-detail-overlay').style.display = 'none';
+}
+
+// ── Channel filtering ──────────────────────────────────────────────────
+function filterByChannel(name) {
+  const url = name
+    ? '/api/youtube/videos?limit=50&channel=' + encodeURIComponent(name)
+    : '/api/youtube/videos?limit=50';
+  // Use HTMX to reload the video grid
+  const target = document.getElementById('yt-videos');
+  htmx.ajax('GET', url, {target: '#yt-videos', swap: 'outerHTML'});
+  // Highlight active chip
+  document.querySelectorAll('.channel-chip').forEach(c => c.classList.remove('active'));
+  const chips = document.querySelectorAll('.channel-chip');
+  chips.forEach(c => {
+    if (c.getAttribute('data-channel') === (name || '')) c.classList.add('active');
+  });
+}
+
+// ── Refresh all data ───────────────────────────────────────────────────
+function refreshYouTube() {
+  fetch('/api/youtube/refresh', {method: 'POST'})
+    .then(() => {
+      htmx.ajax('GET', '/api/youtube/channels', {target: '#yt-stats', swap: 'outerHTML'});
+      htmx.ajax('GET', '/api/youtube/channel-filter', {target: '#yt-channel-filter', swap: 'outerHTML'});
+      htmx.ajax('GET', '/api/youtube/videos?limit=50', {target: '#yt-videos', swap: 'outerHTML'});
+      document.getElementById('yt-search').value = '';
+      document.getElementById('yt-search-results').innerHTML = '';
+    });
+}
+
+// ── Utility ────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ── Keyboard: Escape closes detail modal ───────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('yt-detail-overlay').style.display = 'none';
+  }
+});
+
+// ── HTMX indicator wiring for search spinner ────────────────────────────
+document.body.addEventListener('htmx:beforeSend', function(evt) {
+  if (evt.detail.target.id === 'yt-search-results') {
+    document.getElementById('yt-search-spinner').classList.add('htmx-request');
+  }
+});
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+  if (evt.detail.target.id === 'yt-search-results') {
+    document.getElementById('yt-search-spinner').classList.remove('htmx-request');
+  }
+});
+</script>
+
+<style>
+/* Small inline style for the video count label */
+.yt-video-count {
+  margin-bottom: 12px; font-size: 12px;
+}
+.yt-search-empty {
+  padding: 12px 16px; font-size: 13px;
+}
+</style>
+{% endblock %}
