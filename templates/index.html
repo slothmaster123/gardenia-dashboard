@@ -24,6 +24,11 @@
       <div class="value">&hellip;</div>
       <div class="hint">Loading</div>
     </div>
+    <div class="stat" hx-get="/api/dashboard/stat/crm" hx-trigger="load" hx-swap="outerHTML">
+      <div class="label">CRM</div>
+      <div class="value">&hellip;</div>
+      <div class="hint">Loading</div>
+    </div>
     <div class="stat" hx-get="/api/dashboard/stat/tasks" hx-trigger="load" hx-swap="outerHTML">
       <div class="label">Tasks</div>
       <div class="value">&hellip;</div>
@@ -35,6 +40,14 @@
     <a class="card" href="{{ url_for('youtube.youtube_page') }}">
       <div class="card-title">YouTube</div>
       <div class="card-body">Channel intelligence, summaries, search, trends.</div>
+    </a>
+    <a class="card" href="{{ url_for('ideas.ideas_page') }}">
+      <div class="card-title">Ideas</div>
+      <div class="card-body">Cross-video synthesis, thematic clusters, insight through-lines.</div>
+    </a>
+    <a class="card" href="{{ url_for('crm.crm_page') }}">
+      <div class="card-title">CRM</div>
+      <div class="card-body">Lightfield CRM — contacts, accounts, opportunities, tasks.</div>
     </a>
     <a class="card" href="{{ url_for('arrs.media_page') }}">
       <div class="card-title">Media</div>

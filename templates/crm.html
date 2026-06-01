@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>CRM</h1>
+    <div class="sub">Lightfield CRM — contacts, accounts, opportunities, and activity.</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="refreshCRM()" title="Refresh data from API">⟳ Refresh</button>
+    <a href="https://crm.lightfield.app" target="_blank" class="btn btn-ghost" title="Open Lightfield in new tab">↗ Open</a>
+  </div>
+</header>
+
+<!-- Stats bar (loaded via HTMX) -->
+<section id="crm-stats" class="stats"
+         hx-get="/api/crm/summary"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+  <div class="stat"><div class="label">Contacts</div><div class="value">—</div></div>
+  <div class="stat"><div class="label">Accounts</div><div class="value">—</div></div>
+  <div class="stat"><div class="label">Opportunities</div><div class="value">—</div></div>
+  <div class="stat"><div class="label">Tasks</div><div class="value">—</div></div>
+  <div class="stat"><div class="label">Emails</div><div class="value">—</div></div>
+</section>
+
+<!-- Tab bar -->
+<nav class="tab-bar" id="crm-tabs">
+  <button class="tab active" hx-get="/api/crm/contacts" hx-target="#crm-content" hx-swap="innerHTML"
+          onclick="switchTab(event, 'contacts')">Contacts</button>
+  <button class="tab" hx-get="/api/crm/accounts" hx-target="#crm-content" hx-swap="innerHTML"
+          onclick="switchTab(event, 'accounts')">Accounts</button>
+  <button class="tab" hx-get="/api/crm/opportunities" hx-target="#crm-content" hx-swap="innerHTML"
+          onclick="switchTab(event, 'opportunities')">Opportunities</button>
+  <button class="tab" hx-get="/api/crm/tasks" hx-target="#crm-content" hx-swap="innerHTML"
+          onclick="switchTab(event, 'tasks')">Tasks</button>
+  <button class="tab" hx-get="/api/crm/emails" hx-target="#crm-content" hx-swap="innerHTML"
+          onclick="switchTab(event, 'emails')">Emails</button>
+</nav>
+
+<!-- Content area (loaded via HTMX) -->
+<div id="crm-content" class="crm-content"
+     hx-get="/api/crm/contacts"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+  <div class="loading">Loading contacts…</div>
+</div>
+
+<script>
+function switchTab(evt, tab) {
+  document.querySelectorAll('#crm-tabs .tab').forEach(t => t.classList.remove('active'));
+  evt.target.classList.add('active');
+}
+
+function refreshCRM() {
+  // Re-trigger stats and current tab
+  htmx.trigger('#crm-stats', 'loadFromRefresh');
+  const activeTab = document.querySelector('#crm-tabs .tab.active');
+  if (activeTab) {
+    htmx.trigger(activeTab, 'click');
+  }
+}
+
+// Custom event to allow re-triggering
+document.body.addEventListener('loadFromRefresh', function(evt) {
+  htmx.ajax('GET', '/api/crm/summary', {target: '#crm-stats', swap: 'outerHTML'});
+});
+</script>
+
+<!-- Summary stats template (HTMX replaces #crm-stats) -->
+<template id="crm-stats-template">
+  <section id="crm-stats" class="stats"
+           hx-get="/api/crm/summary"
+           hx-trigger="every 120s"
+           hx-swap="outerHTML">
+    <div class="stat"><div class="label">Contacts</div><div class="value">{contacts}</div></div>
+    <div class="stat"><div class="label">Accounts</div><div class="value">{accounts}</div></div>
+    <div class="stat"><div class="label">Opportunities</div><div class="value">{opportunities}</div></div>
+    <div class="stat"><div class="label">Tasks</div><div class="value">{tasks}</div></div>
+    <div class="stat"><div class="label">Emails</div><div class="value">{emails}</div></div>
+  </section>
+</template>
+{% endblock %}

@@ -12,7 +12,9 @@ from modules.chat import chat_bp
 from modules.youtube import youtube_bp, _build_channel_stats
 from modules.arrs import arrs_bp
 from modules.ideas import ideas_bp
+from modules.lightfield import crm_bp
 from services.arr_client import get_combined_health
+from services.lightfield_client import get_client as get_crm_client
 
 # ── Worker daemon status store (in-memory, thread-safe) ─────────────────────
 _worker_lock = threading.Lock()
@@ -67,6 +69,7 @@ def create_app() -> Flask:
     app.register_blueprint(youtube_bp)
     app.register_blueprint(arrs_bp)
     app.register_blueprint(ideas_bp)
+    app.register_blueprint(crm_bp)
 
     @app.get("/")
     def dashboard_index():
@@ -161,6 +164,29 @@ def create_app() -> Flask:
   <div class="hint">{" &middot; ".join(hint_parts)}</div>
 </div>"""
         return jsonify({"up": up_count, "total": total, "services": health})
+
+    @app.get("/api/dashboard/stat/crm")
+    def dashboard_stat_crm():
+        """HTMX partial: CRM stat card — total records count."""
+        try:
+            client = get_crm_client()
+            contacts = client.count_contacts()
+            accounts = client.count_accounts()
+            opps = client.count_opportunities()
+            total = contacts + accounts + opps
+        except Exception:
+            contacts = 0
+            accounts = 0
+            opps = 0
+            total = 0
+
+        if _is_htmx():
+            return f"""<div class="stat" hx-get="/api/dashboard/stat/crm" hx-trigger="every 120s" hx-swap="outerHTML">
+  <div class="label">CRM</div>
+  <div class="value">{total}</div>
+  <div class="hint">{contacts} contacts &middot; {accounts} accounts &middot; {opps} opps</div>
+</div>"""
+        return jsonify({"contacts": contacts, "accounts": accounts, "opportunities": opps, "total": total})
 
     @app.get("/api/dashboard/stat/tasks")
     def dashboard_stat_tasks():
